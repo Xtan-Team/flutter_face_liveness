@@ -6,12 +6,8 @@ import 'liveness_controller.dart';
 import 'models/liveness_action.dart';
 import 'models/liveness_result.dart';
 import 'models/liveness_config.dart';
-import 'models/detection_status.dart';
 import 'ui/face_overlay_painter.dart';
 import 'ui/liveness_instructions_widget.dart';
-import 'ui/status_indicator_widget.dart';
-import 'ui/liveness_step_indicator.dart';
-
 /// Top-level widget for face liveness verification.
 ///
 /// ```dart
@@ -35,7 +31,7 @@ class FlutterFaceLiveness extends StatefulWidget {
 
   final List<LivenessAction> actions;
   final void Function(LivenessResult result) onSuccess;
-  final void Function(String reason)          onFailed;
+  final void Function(String reason) onFailed;
   final LivenessConfig config;
 
   @Deprecated('Use LivenessConfig.showDebugOverlay')
@@ -49,7 +45,7 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
     with SingleTickerProviderStateMixin {
   late LivenessController _controller;
   late AnimationController _pulseCtrl;
-  late Animation<double>   _pulseAnim;
+  late Animation<double> _pulseAnim;
 
   @override
   void initState() {
@@ -61,10 +57,10 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
     _pulseAnim = CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut);
 
     _controller = LivenessController(
-      actions:   widget.actions,
-      config:    widget.config,
+      actions: widget.actions,
+      config: widget.config,
       onSuccess: widget.onSuccess,
-      onFailed:  widget.onFailed,
+      onFailed: widget.onFailed,
     );
     _controller.initialize();
   }
@@ -102,10 +98,10 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
   Widget _loadingView() {
     return Consumer<LivenessController>(
       builder: (_, ctrl, __) {
-        final faceIdProgress  = ctrl.faceIdModelDownloadProgress;
-        final tfliteProgress  = ctrl.tfliteModelDownloadProgress;
-        final dlProgress      = tfliteProgress ?? faceIdProgress;
-        final isTfliteDl      = tfliteProgress != null;
+        final faceIdProgress = ctrl.faceIdModelDownloadProgress;
+        final tfliteProgress = ctrl.tfliteModelDownloadProgress;
+        final dlProgress = tfliteProgress ?? faceIdProgress;
+        // final isTfliteDl      = tfliteProgress != null;
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -121,11 +117,12 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
               ),
               const SizedBox(height: 20),
               Text(
-                dlProgress != null
-                    ? isTfliteDl
-                        ? 'Downloading Anti-Spoof model… ${(dlProgress * 100).toInt()}%'
-                        : 'Downloading Face ID model… ${(dlProgress * 100).toInt()}%'
-                    : 'Starting camera…',
+                'Loading models…',
+                // dlProgress != null
+                //     ? isTfliteDl
+                //         ? 'Downloading Anti-Spoof model… ${(dlProgress * 100).toInt()}%'
+                //         : 'Downloading Face ID model… ${(dlProgress * 100).toInt()}%'
+                //     : 'Starting camera…',
                 style: TextStyle(
                   color: _isDark ? Colors.white54 : Colors.black45,
                   fontSize: 14,
@@ -241,12 +238,13 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
               children: [
                 // Custom header or default (status + step indicator)
                 if (widget.config.headerBuilder != null)
-                  widget.config.headerBuilder!(context)
-                else
-                  _defaultHeader(ctrl),
+                  widget.config.headerBuilder!(context),
+                // else
+
+                //  _defaultHeader(ctrl),
 
                 // Spacer to center the oval
-              const  Expanded(
+                const Expanded(
                   child: SizedBox.expand(
                     child: Center(
                       child: SizedBox.shrink(),
@@ -278,7 +276,8 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 16),
+                  const Icon(Icons.warning_amber_rounded,
+                      color: Colors.white, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -296,30 +295,30 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
           _debugOverlay(ctrl),
 
         // Success overlay
-        if (ctrl.status == DetectionStatus.completed) _successOverlay(),
+        // if (ctrl.status == DetectionStatus.completed) _successOverlay(),
       ],
     );
   }
 
-  Widget _defaultHeader(LivenessController ctrl) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Status pill (top center)
-          StatusIndicatorWidget(status: ctrl.status),
-          const SizedBox(height: 12),
-          // Step indicator
-          LivenessStepIndicator(
-            actions: [...ctrl.completedActions, ...ctrl.remainingActions],
-            completedCount: ctrl.completedCount,
-            isDark: _isDark,
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _defaultHeader(LivenessController ctrl) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //     child: Column(
+  //       mainAxisSize: MainAxisSize.min,
+  //       children: [
+  //         // Status pill (top center)
+  //         StatusIndicatorWidget(status: ctrl.status),
+  //         const SizedBox(height: 12),
+  //         // Step indicator
+  //         LivenessStepIndicator(
+  //           actions: [...ctrl.completedActions, ...ctrl.remainingActions],
+  //           completedCount: ctrl.completedCount,
+  //           isDark: _isDark,
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _defaultFooter(LivenessController ctrl) {
     return Padding(
@@ -349,36 +348,36 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
     );
   }
 
-  Widget _successOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            colors: [
-              const Color(0xFF10B981).withValues(alpha:0.18),
-              Colors.transparent,
-            ],
-          ),
-        ),
-        child: const Center(
-          child: Icon(Icons.verified_rounded,
-              color: Color(0xFF10B981), size: 90),
-        ),
-      ),
-    );
-  }
+  // Widget _successOverlay() {
+  //   return Positioned.fill(
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         gradient: RadialGradient(
+  //           colors: [
+  //             const Color(0xFF10B981).withValues(alpha: 0.18),
+  //             Colors.transparent,
+  //           ],
+  //         ),
+  //       ),
+  //       child: const Center(
+  //         child:
+  //             Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 90),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _debugOverlay(LivenessController ctrl) {
-    final face    = ctrl.currentFace;
+    final face = ctrl.currentFace;
     final quality = ctrl.lastQuality;
-    final vr      = ctrl.liveHeuristicScore;
-    final lap     = ctrl.liveLaplacianScore;
-    final het     = ctrl.liveHetScore;
-    final tf      = ctrl.lastTfliteScore;
-    final ra      = ctrl.liveReplayScore;
-    final scr     = ctrl.liveScreenScore;
-    final flow    = ctrl.liveFlowScore;
-    final geo     = ctrl.liveGeoScore;
+    final vr = ctrl.liveHeuristicScore;
+    final lap = ctrl.liveLaplacianScore;
+    final het = ctrl.liveHetScore;
+    final tf = ctrl.lastTfliteScore;
+    final ra = ctrl.liveReplayScore;
+    final scr = ctrl.liveScreenScore;
+    final flow = ctrl.liveFlowScore;
+    final geo = ctrl.liveGeoScore;
 
     final vrLine = vr != null
         ? 'VR-B:  ${(vr * 100).toStringAsFixed(1)}%${vr < 0.5 ? " ⚠" : " ok"}\n'
@@ -389,9 +388,8 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
     final hetLine = het != null
         ? 'HET:   ${het.toStringAsFixed(4)}${het < 0.01 ? " ⚠SCREEN" : " ok"}\n'
         : '';
-    final tfLine = tf != null
-        ? 'TF:    ${(tf * 100).toStringAsFixed(1)}% real\n'
-        : '';
+    final tfLine =
+        tf != null ? 'TF:    ${(tf * 100).toStringAsFixed(1)}% real\n' : '';
     final raLine = ra != null
         ? 'RA:    ${(ra * 100).toStringAsFixed(1)}%${ra < 0.5 ? " ⚠" : " ok"}\n'
         : '';
@@ -405,15 +403,17 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
         ? 'GEO:   ${(geo * 100).toStringAsFixed(1)}%${geo < 0.4 ? " ⚠FLAT" : " ok"}\n'
         : '';
 
-    final faceLines = face == null ? 'No face\n' :
-        'Yaw:   ${face.headEulerAngleY.toStringAsFixed(1)}°\n'
-        'Pitch: ${face.headEulerAngleX.toStringAsFixed(1)}°\n'
-        'L-Eye: ${face.leftEyeOpenProbability.toStringAsFixed(2)}\n'
-        'R-Eye: ${face.rightEyeOpenProbability.toStringAsFixed(2)}\n'
-        'Smile: ${face.smilingProbability.toStringAsFixed(2)}\n'
-        'Area:  ${(face.faceAreaRatio * 100).toStringAsFixed(1)}%\n';
+    final faceLines = face == null
+        ? 'No face\n'
+        : 'Yaw:   ${face.headEulerAngleY.toStringAsFixed(1)}°\n'
+            'Pitch: ${face.headEulerAngleX.toStringAsFixed(1)}°\n'
+            'L-Eye: ${face.leftEyeOpenProbability.toStringAsFixed(2)}\n'
+            'R-Eye: ${face.rightEyeOpenProbability.toStringAsFixed(2)}\n'
+            'Smile: ${face.smilingProbability.toStringAsFixed(2)}\n'
+            'Area:  ${(face.faceAreaRatio * 100).toStringAsFixed(1)}%\n';
 
-    final qualityLine = 'Light: ${quality?.brightness.toStringAsFixed(2) ?? '--'}\n'
+    final qualityLine =
+        'Light: ${quality?.brightness.toStringAsFixed(2) ?? '--'}\n'
         'Blur:  ${quality?.blurScore.toStringAsFixed(0) ?? '--'}';
 
     return Positioned(
@@ -422,7 +422,7 @@ class _FlutterFaceLivenessState extends State<FlutterFaceLiveness>
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha:0.65),
+          color: Colors.black.withValues(alpha: 0.65),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
