@@ -1,0 +1,31 @@
+{
+  "name": "flutter_face_liveness",
+  "version": "1.0.0",
+  "summary": "Real-time face liveness detection using Google ML Kit.",
+  "description": "A production-ready Flutter package for real-time face detection and liveness\nverification using Google ML Kit. Supports eye blink, head movement, and\nanti-spoofing for KYC, attendance, and identity verification.",
+  "homepage": "https://github.com/your-org/flutter_face_liveness",
+  "license": {
+    "file": "../LICENSE"
+  },
+  "authors": {
+    "Cerise Tech Solutions": "info@cerisetechsolutions.com"
+  },
+  "source": {
+    "path": "."
+  },
+  "source_files": "Classes/**/*",
+  "dependencies": {
+    "Flutter": [
+
+    ]
+  },
+  "platforms": {
+    "ios": "13.0"
+  },
+  "pod_target_xcconfig": {
+    "DEFINES_MODULE": "YES",
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": "i386"
+  },
+  "swift_versions": "5.0",
+  "swift_version": "5.0"
+}
