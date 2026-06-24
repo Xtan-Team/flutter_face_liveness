@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'liveness_controller.dart';
 import 'models/liveness_action.dart';
-import 'models/liveness_result.dart';
+import 'models/liveness_result.dart'; 
 import 'models/liveness_config.dart';
 import 'ui/face_overlay_painter.dart';
 import 'ui/liveness_instructions_widget.dart';
