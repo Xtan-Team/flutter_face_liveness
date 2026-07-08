@@ -23,6 +23,7 @@ Production-ready AI-powered Flutter SDK for **real-time face liveness detection,
 - [LivenessConfig Reference](#livenessconfig-reference)
 - [Liveness Actions](#liveness-actions)
 - [LivenessResult Fields](#livenessresult-fields)
+- [Image Capturing](#image-capturing)
 - [LivenessController API](#livenesscontroller-api)
 - [TFLite Integration](#tflite-integration-optional)
 - [Architecture](#architecture)
@@ -431,6 +432,12 @@ LivenessConfig({
   int?    videoReplayInputSize       = null,
   double  videoReplayThreshold       = 0.50,
 
+  // Image Capture
+  bool    captureImageOnSuccess      = false,
+  bool    persistCapturedImage       = true,
+  String  captureDirectoryName       = 'flutter_face_liveness_captures',
+  int     maxStoredCapturedImages    = 30,
+
   // UI
   ThemeMode themeMode       = ThemeMode.dark,
   bool      showDebugOverlay = false,
@@ -472,6 +479,10 @@ LivenessConfig({
 | `videoReplayModelUrl` | `String?` | `null` | Override: download URL |
 | `videoReplayInputSize` | `int?` | `null` | Override: input size (default 80) |
 | `videoReplayThreshold` | `double` | `0.50` | Min score below this → `videoReplayDetected: true` |
+| `captureImageOnSuccess` | `bool` | `false` | Capture a still image when liveness succeeds |
+| `persistCapturedImage` | `bool` | `true` | Move captured image from temp storage to app documents |
+| `captureDirectoryName` | `String` | `'flutter_face_liveness_captures'` | Directory name under app documents for persisted captures |
+| `maxStoredCapturedImages` | `int` | `30` | Maximum images to keep on device — older files deleted first |
 | `themeMode` | `ThemeMode` | `dark` | `ThemeMode.system` follows device |
 | `showDebugOverlay` | `bool` | `false` | 8 signal scores + face metrics |
 
@@ -531,7 +542,127 @@ class LivenessResult {
   final bool?   isFaceIdNew;            // true = first-time, false = recognised
   final bool?   faceAlreadyRegistered;  // true when registrationOnly + face already exists
   final double? faceMatchScore;         // cosine similarity from gallery search (0.0–1.0)
+
+  // Image Capture — non-null when captureImageOnSuccess: true
+  final CapturedImage? capturedImage;    // metadata + path to captured image
 }
+
+// CapturedImage — returned when image capture is enabled
+class CapturedImage {
+  final String path;          // absolute local filesystem path
+  final int capturedAtMs;     // Unix timestamp in milliseconds
+  final int? width;           // image width, when available
+  final int? height;          // image height, when available
+  final int? sizeBytes;       // file size in bytes, when available
+}
+```
+
+---
+
+## Image Capturing
+
+> Capture a still image of the user's face upon successful liveness verification — useful for KYC audit trails, identity records, or compliance requirements.
+
+### Enable it
+
+```dart
+FlutterFaceLiveness(
+  actions: [LivenessAction.blink, LivenessAction.turnLeft],
+  config: LivenessConfig(
+    captureImageOnSuccess: true,    // take photo on successful verification
+    persistCapturedImage: true,     // save to app documents (default)
+    captureDirectoryName: 'flutter_face_liveness_captures',  // folder name
+    maxStoredCapturedImages: 30,    // auto-prune older images
+  ),
+  onSuccess: (result) {
+    final capture = result.capturedImage;
+    if (capture != null) {
+      print('Image path: ${capture.path}');
+      print('Captured at: ${DateTime.fromMillisecondsSinceEpoch(capture.capturedAtMs)}');
+      print('Size: ${capture.sizeBytes} bytes');
+      // Upload to server, display to user, etc.
+    }
+  },
+  onFailed: (reason) => print('Failed: $reason'),
+)
+```
+
+### Configuration options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `captureImageOnSuccess` | `bool` | `false` | Capture a still image when liveness succeeds |
+| `persistCapturedImage` | `bool` | `true` | Move captured image from temp storage to app documents |
+| `captureDirectoryName` | `String` | `'flutter_face_liveness_captures'` | Directory name under app documents for persisted captures |
+| `maxStoredCapturedImages` | `int` | `30` | Maximum images to keep on device — older files deleted first |
+
+### Storage behaviour
+
+- **Temporary capture:** When `persistCapturedImage: false`, the image is captured to a temporary file that may be cleaned up by the OS.
+- **Persistent capture:** When `persistCapturedImage: true` (default), the image is moved to `<app_documents>/<captureDirectoryName>/` with a session-based filename.
+- **Auto-pruning:** When `maxStoredCapturedImages` is exceeded, the oldest files in the capture directory are deleted automatically.
+
+### Use case: KYC audit trail
+
+```dart
+FlutterFaceLiveness(
+  actions: [LivenessAction.blink, LivenessAction.turnLeft, LivenessAction.turnRight],
+  config: LivenessConfig(
+    enableFaceId: true,
+    enableAntiSpoof: true,
+    enableVideoReplayDetection: true,
+    captureImageOnSuccess: true,
+    persistCapturedImage: true,
+    maxStoredCapturedImages: 100,
+  ),
+  onSuccess: (result) async {
+    final capture = result.capturedImage;
+    if (capture != null) {
+      // Upload captured image to server for audit trail
+      await uploadKycImage(
+        imagePath: capture.path,
+        sessionId: result.sessionId!,
+        faceId: result.faceId!,
+        timestamp: capture.capturedAtMs,
+      );
+    }
+  },
+  onFailed: (reason) => showError(reason),
+)
+```
+
+### Use case: Display captured image to user
+
+```dart
+import 'dart:io';
+
+FlutterFaceLiveness(
+  actions: [LivenessAction.blink],
+  config: LivenessConfig(
+    captureImageOnSuccess: true,
+    persistCapturedImage: false,  // keep in temp — we'll handle storage
+  ),
+  onSuccess: (result) {
+    final capture = result.capturedImage;
+    if (capture != null) {
+      // Display the captured image
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Verification Complete'),
+          content: Image.file(File(capture.path)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  },
+  onFailed: (reason) => print('Failed: $reason'),
+)
 ```
 
 ---
